@@ -703,6 +703,28 @@ class ListFiltersTests(TestCase):
         expected = [(self.jack.pk, "Jack Red"), (self.john.pk, "John Blue")]
         self.assertEqual(filterspec.lookup_choices, expected)
 
+
+    def test_relatedfieldlistfilter_custom_ordering(self):
+        """TODO """
+
+        class BookAdmin(ModelAdmin):
+            list_filter = ("availability__exact=True'",)
+
+        self.addCleanup(setattr, Employee._meta, "ordering", Employee._meta.ordering)
+        Employee._meta.ordering = ("name",)
+        modeladmin = BookAdmin(Book, site)
+
+        request = self.request_factory.get("/")
+        request.user = self.alfred
+        changelist = modeladmin.get_changelist_instance(request)
+        filterspec = changelist.get_filters(request)[0][0]
+        choices = list(filterspec.choices(changelist))
+
+        expected = [(self.jack.pk, "Jack Red"), (self.john.pk, "John Blue")]
+        self.assertEqual(filterspec.lookup_choices, expected)
+        self.assertIs(choices[-1]["selected"], True)
+        self.assertEqual(choices[-1]["query_string"], "?availability__exact=True")
+
     def test_relatedfieldlistfilter_manytomany(self):
         modeladmin = BookAdmin(Book, site)
 
